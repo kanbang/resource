@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <title>Happy Wedding</title>
+  <!-- 引入样式文件 -->
+  <link rel="stylesheet" href="./css/index.min.css" />
+
+  <!-- 引入 Vue 和 Vant 的 JS 文件 -->
+  <script src="./js/vue.min.js"></script>
+  <script src="./js/vant.min.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <van-form @submit="onSubmit" style="margin-top: 20px" label-width="4em">
+      <van-field v-model="appellation" name="appellation" label="称谓" placeholder="请填写称谓"></van-field>
+      <van-button round block type="info" native-type="submit" :loading="loading" loading-text="生成预览中..."
+        :disabled="loading">
+        生成预览
+      </van-button>
+  </div>
+  </van-form>
+  <div>
+    <img id="img" src="" alt="" style="width: 100%" />
+    <canvas id="canvas" style="display: none"> . </canvas>
+  </div>
+  </div>
+
+  <script>
+    // 在 #app 标签下渲染一个按钮组件
+    new Vue({
+      el: "#app",
+      data: {
+        loading: false,
+        appellation: "",
+
+        // 加载
+        imgLoaded: false,
+        fontLoaded: false,
+        img: null,
+        validFileLoaded: null
+      },
+      methods: {
+        onSubmit(values) {
+          this.loading = true;
+          Object.entries(values).forEach(([key, value]) => {
+            window.localStorage.setItem(key, value);
+          });
+          this.isFileLoaded(() => {
+            this.initCanvas();
+          });
+        },
+        initCanvas() {
+          //图片宽高
+          const [width, height] = [750, 2428];
+
+          const canvas = document.getElementById("canvas");
+          const ctx = canvas.getContext("2d");
+
+          // const ratio = window.devicePixelRatio;
+          canvas.width = width;
+          canvas.height = height;
+
+          ctx.drawImage(this.img, 0, 0, width, height);
+
+          // 称谓
+          var y0 = 850;
+
+          var txt1 = "诚邀";
+          var txt2 = "出席";
+          ctx.fillStyle = "#CC802D";
+          ctx.font = "40px myFont";
+
+          var len1 = ctx.measureText(txt1).width;
+          var len2 = ctx.measureText(txt2).width;
+
+          var txt0 = ' ' + this.appellation + ' ';
+
+          ctx.font = "normal bold 40px myFont";
+          var len0 = ctx.measureText(txt0).width;
+          var x1 = (width - len1 - len2 - len0) / 2;
+          var x0 = x1 + len1;
+          var x2 = x0 + len0;
+
+          ctx.font = "40px myFont";
+          ctx.fillText(txt1, x1, y0);
+          ctx.fillText(txt2, x2, y0);
+
+          ctx.font = "normal bold 40px myFont";
+          ctx.fillText(txt0, x0, y0);
+
+          const imgURL = canvas.toDataURL();
+          document.querySelector("#img").setAttribute("src", imgURL);
+          this.loading = false;
+        },
+
+        // 加载图片
+        loadImage() {
+          this.imgLoaded = false;
+          const img = new Image();
+          img.src = "./assets/BG.png";
+          img.onload = () => {
+            this.imgLoaded = true;
+            this.img = img
+          };
+        },
+        // 加载字体
+        loadFont() {
+          this.fontLoaded = false;
+          const fontface = new FontFace("myFont", "url(./assets/myFont.ttf)");
+          document.fonts.add(fontface);
+          fontface.load().then(() => {
+            this.fontLoaded = true;
+          })
+        },
+        isFileLoaded(callback) {
+          if (this.imgLoaded && this.fontLoaded) {
+            this.validFileLoaded && clearTimeout(this.validFileLoaded)
+            callback && callback();
+          } else {
+            this.validFileLoaded = setTimeout(() => this.isFileLoaded(callback), 400);
+          }
+        }
+      },
+      created() {
+        this.appellation = window.localStorage.getItem("appellation");
+        this.loadImage();
+        this.loadFont();
+      }
+    });
+  </script>
+</body>
+
+</html>
